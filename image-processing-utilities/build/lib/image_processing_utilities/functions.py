@@ -16,7 +16,7 @@ def ssim_samples(samples, samples_gt):
     val = 0
     for i in range(4):
         for j in range(4):
-            val += ssim(samples[i][j], samples_gt[i][j], multichannel=True)
+            val += ssim(samples[i][j], samples_gt[i][j], channel_axis=-1)
 
     return val / 16
 

@@ -1,3 +1,5 @@
+import cv2
+
 def gaussian_blurr_samples(samples, kernel, sigma):
     out = []
     for i in range(4):
