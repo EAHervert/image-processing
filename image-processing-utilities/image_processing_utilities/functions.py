@@ -4,31 +4,45 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 import os
 import scipy
 
-def l2_samples(samples, samples_gt):
-    val = 0
-    for i in range(4):
-        for j in range(4):
-            val += np.square(samples[i][j] - samples_gt[i][j]).mean()
+def metrics_samples(samples, samples_gt, color=False):
+    m, n = samples_gt.shape[:2]
+    out = {'MAE': 0, 'MSE': 0, 'SSIM': 0, 'PSNR': 0}
 
-    return val / 16
+    for i in range(m):
+        for j in range(n):
+            error = np.abs(samples_gt[i][j] - samples[i][j])
 
-def ssim_samples(samples, samples_gt):
-    val = 0
-    for i in range(4):
-        for j in range(4):
-            val += ssim(samples[i][j], samples_gt[i][j], channel_axis=-1)
+            out['MAE'] += error.mean()
+            out['MSE'] += (error * error).mean()
+            if color:
+                out['SSIM'] += ssim(samples[i][j], samples_gt[i][j], channel_axis=-1)
+            else:
+                out['SSIM'] += ssim(samples[i][j], samples_gt[i][j])
+            out['PSNR'] += psnr(samples[i][j], samples_gt[i][j])
 
-    return val / 16
+    out['MAE'] /= m * n
+    out['MSE'] /= m * n
+    out['SSIM'] /= m * n
+    out['PSNR'] /= m * n
 
-def psnr_samples(samples, samples_gt):
-    val = 0
-    for i in range(4):
-        for j in range(4):
-            val += psnr(samples[i][j], samples_gt[i][j])
+    return out
 
-    return val / 16
 
-def dataset_generator(dataset='SIDD'):
+def validation_dataset_generator(dataset='SIDD'):
+    # .mat files
+    if dataset == 'SIDD':
+        return validation_dataset_generator_mat_file()
+    elif dataset == 'DIV2K_GSN_10':
+        return validation_dataset_generator_mat_file(dataset='DIV2K_GSN_10')
+    elif dataset == 'DIV2K_SNP_10':
+        return validation_dataset_generator_mat_file(dataset='DIV2K_SNP_10')
+    else:
+        return False
+
+    return x_noisy, x_gt
+
+
+def validation_dataset_generator_mat_file(dataset='SIDD'):
     # get current directory
     path = os.getcwd()
 
