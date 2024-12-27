@@ -3,12 +3,18 @@
 
 /image-processing-utilities/build/
 
+/patch-based/data/
+/patch-based/.ipynb_checkpoints/
+/patch-based/.virtual_documents/
+
 /spatial-filtering/data/
 /spatial-filtering/.ipynb_checkpoints/
 /spatial-filtering/.virtual_documents/
 
 /transform-domain-filtering/data/
 /transform-domain-filtering/.ipynb_checkpoints/
+/transform-domain-filtering/.virtual_documents/
 
 /sparse-learning/data/
 /sparse-learning/.ipynb_checkpoints/
+/sparse-learning/.virtual_documents/
