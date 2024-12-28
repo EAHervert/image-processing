@@ -1,6 +1,9 @@
 /resources/
 /results/
 
+/data-driven/.ipynb_checkpoints/
+/data-driven/.virtual_documents/
+
 /image-processing-utilities/build/
 
 /patch-based/data/

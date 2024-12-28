@@ -1,6 +1,8 @@
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
+from sklearn.datasets import fetch_olivetti_faces
+from sklearn.datasets import fetch_openml
 import os
 import scipy
 
@@ -30,12 +32,12 @@ def metrics_samples(samples, samples_gt, color=False):
 
 def validation_dataset_generator(dataset='SIDD'):
     # .mat files
-    if dataset == 'SIDD':
-        return validation_dataset_generator_mat_file()
-    elif dataset == 'DIV2K_GSN_10':
-        return validation_dataset_generator_mat_file(dataset='DIV2K_GSN_10')
-    elif dataset == 'DIV2K_SNP_10':
-        return validation_dataset_generator_mat_file(dataset='DIV2K_SNP_10')
+    if dataset in ['SIDD', 'DIV2K_GSN_10', 'DIV2K_SNP_10']:
+        return validation_dataset_generator_mat_file(dataset=dataset)
+    elif dataset == 'Olivetti':
+        return validation_dataset_generator_olivetti()
+    elif dataset == 'Olivetti':
+        return validation_dataset_generator_USPS()
     else:
         return False
 
@@ -73,3 +75,25 @@ def validation_dataset_generator_mat_file(dataset='SIDD'):
     val_gt_mat = np.array(scipy.io.loadmat(val_gt)[tag_gt])
 
     return val_noisy_mat, val_gt_mat
+
+
+def validation_dataset_generator_olivetti():
+    # Fix random seed and shuffle=False for consistency through the experiments
+    np.random.seed(0)
+    x = fetch_olivetti_faces(shuffle=False)
+    # Add noise to the images
+    noise = np.random.normal(0, 0.1, x.shape)
+    x_noisy = x + noise
+
+    return x_noisy, x
+
+
+def validation_dataset_generator_USPS():
+    # Fix random seed and shuffle=False for consistency through the experiments
+    np.random.seed(0)
+    x, _ = fetch_openml(data_id=41082, as_frame=False, return_X_y=True)
+    # Add noise to the images
+    noise = np.random.normal(0, 0.1, x.shape)
+    x_noisy = x + noise
+
+    return x_noisy, x
