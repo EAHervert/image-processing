@@ -1,30 +1,36 @@
 from image_processing_utilities.functions import metrics_samples
 from image_processing_utilities.functions import validation_dataset_generator
+from image_processing_utilities.functions import ssim_batch
 from denoising_functions import gaussian_blurr_samples, median_blurr_samples
 import numpy as np
-from skimage.metrics import structural_similarity as ssim
 import json
 import argparse
 
 parser = argparse.ArgumentParser(description='Spatial Denoising')
 
 parser.add_argument('--dataset', type=str, default='SIDD')
-parser.add_argument('--color', action='store_true')
 parser.add_argument('--method', type=str, default='Gaussian')
 args = parser.parse_args()
 
 x_noisy, x_gt = validation_dataset_generator(dataset=args.dataset)
+color = False
 if args.dataset in ['SIDD', 'DIV2K_GSN_10', 'DIV2K_SNP_10']:
-    x_noisy, x_gt = validation_dataset_generator(dataset=args.dataset)
+    color = True
     samples = json.load(open('config.json'))[args.dataset]
     x_noisy_samples = np.array([x_noisy[sample[0], sample[1], :, :, :] for sample in samples])
     x_gt_samples = np.array([x_gt[sample[0], sample[1], :, :, :] for sample in samples])
+elif args.dataset in ['Olivetti']:
+    x_noisy_samples = x_noisy[:10, :10]
+    x_gt_samples = x_gt[:10, :10]
+elif args.dataset in ['USPS']:
+    x_noisy_samples = x_noisy[:64, :64]
+    x_gt_samples = x_gt[:64, :64]
 else:
     exit()
 
 # Generate initial metrics:
 print('\nMetrics:')
-initial_metrics = metrics_samples(x_noisy, x_gt, color=args.color)
+initial_metrics = metrics_samples(x_noisy, x_gt, color=color)
 print('MAE: ', initial_metrics['MAE'])
 print('MSE: ', initial_metrics['MSE'])
 print('SSIM: ', initial_metrics['SSIM'])
@@ -45,12 +51,7 @@ if args.method == 'Gaussian':
     for i, kernel in enumerate(kernels):
         for j, sigma in enumerate(sigmas):
             test = gaussian_blurr_samples(x_noisy_samples, kernel, sigma)
-
-            if args.color:
-                avg_loss = 1 - ssim(test, x_gt_samples, channel_axis=-1)  # SSIM Loss
-            else:
-                avg_loss = 1 - ssim(test, x_gt_samples)  # SSIM Loss
-
+            avg_loss = 1 - ssim_batch(test, x_gt_samples)  # SSIM Loss
             metrics[i, j] = avg_loss
 
             if avg_loss < best_loss:
@@ -75,12 +76,7 @@ elif args.method == 'Median':
     metrics = np.zeros((len(kernels),))
     for i, kernel in enumerate(kernels):
         test = median_blurr_samples(x_noisy_samples, kernel)
-
-        if args.color:
-            avg_loss = 1 - ssim(test, x_gt_samples, channel_axis=-1)  # SSIM Loss
-        else:
-            avg_loss = 1 - ssim(test, x_gt_samples)  # SSIM Loss
-
+        avg_loss = 1 - ssim_batch(test, x_gt_samples)  # SSIM Loss
         metrics[i] = avg_loss
 
         if avg_loss < best_loss:
@@ -98,7 +94,7 @@ else:
     exit()
 
 # Generate final metrics:
-final_metrics = metrics_samples(denoised, x_gt, color=args.color)
+final_metrics = metrics_samples(denoised, x_gt, color=color)
 del denoised
 
 print('\nDenoised VALUES')

@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='image-processing-utilities',
-      version='0.2.0',
+      version='0.3.1',
       description='methods and transforms for image denoising and analysis',
       author='Esau Hervert Hernandez',
       author_email='eah170630@utdallas.edu'
