@@ -30,7 +30,7 @@ else:
 
 # Generate initial metrics:
 print('\nMetrics:')
-initial_metrics = metrics_samples(x_noisy, x_gt, color=color)
+initial_metrics = metrics_samples(x_noisy.astype(np.single), x_gt.astype(np.single), color=color)
 print('MAE: ', initial_metrics['MAE'])
 print('MSE: ', initial_metrics['MSE'])
 print('SSIM: ', initial_metrics['SSIM'])
@@ -51,7 +51,7 @@ if args.method == 'Gaussian':
     for i, kernel in enumerate(kernels):
         for j, sigma in enumerate(sigmas):
             test = gaussian_blurr_samples(x_noisy_samples, kernel, sigma)
-            avg_loss = 1 - ssim_batch(test, x_gt_samples)  # SSIM Loss
+            avg_loss = 1 - ssim_batch(test.astype(np.single), x_gt_samples.astype(np.single))  # SSIM Loss
             metrics[i, j] = avg_loss
 
             if avg_loss < best_loss:
@@ -94,7 +94,7 @@ else:
     exit()
 
 # Generate final metrics:
-final_metrics = metrics_samples(denoised, x_gt, color=color)
+final_metrics = metrics_samples(denoised.astype(np.single), x_gt.astype(np.single), color=color)
 del denoised
 
 print('\nDenoised VALUES')

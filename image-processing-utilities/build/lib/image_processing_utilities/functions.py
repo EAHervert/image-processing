@@ -18,7 +18,7 @@ def metrics_samples(samples, samples_gt, color=False):
             if color:
                 out['SSIM'] += ssim(samples[i][j], samples_gt[i][j], channel_axis=-1)
             else:
-                out['SSIM'] += ssim(samples[i][j], samples_gt[i][j])
+                out['SSIM'] += ssim(samples[i][j], samples_gt[i][j], data_range=255)
 
             # Can have issue where psnr has division by zero problem
             try:
@@ -35,14 +35,14 @@ def metrics_samples(samples, samples_gt, color=False):
     return out
 
 
-def validation_dataset_generator(dataset='SIDD'):
+def validation_dataset_generator(dataset='SIDD', sigma=-1):
     # .mat files
     if dataset in ['SIDD', 'DIV2K_GSN_10', 'DIV2K_SNP_10']:
         return validation_dataset_generator_mat_file(dataset=dataset)
     elif dataset == 'Olivetti':
-        return validation_dataset_generator_olivetti()
+        return validation_dataset_generator_olivetti(sigma=15 if sigma == -1 else sigma)
     elif dataset == 'USPS':
-        return validation_dataset_generator_USPS()
+        return validation_dataset_generator_USPS(sigma=50 if sigma == -1 else sigma)
     else:
         return False
 
@@ -82,26 +82,27 @@ def validation_dataset_generator_mat_file(dataset='SIDD'):
     return val_noisy_mat, val_gt_mat
 
 
-def validation_dataset_generator_olivetti(snr_db=10):
+def validation_dataset_generator_olivetti(sigma=10):
     # Fix random seed and shuffle=False for consistency through the experiments
     np.random.seed(0)
     x = fetch_olivetti_faces(shuffle=False)['images'].reshape(20, 20, 64, 64) * 255
     x = x.astype(np.uint8)
 
     # Add noise to the images
-    x_noisy = add_gaussian_noise(x, snr_db)
+    x_noisy = add_gaussian_noise(x, sigma)
 
     return x_noisy, x
 
 
-def validation_dataset_generator_USPS(snr_db=10):
+def validation_dataset_generator_USPS(sigma=10):
     # Fix random seed and shuffle=False for consistency through the experiments
     np.random.seed(0)
     x, _ = fetch_openml(data_id=41082, as_frame=False, return_X_y=True)
-    x = (x[:9216].reshape(96, 96, 16, 16) * 255).astype(np.uint8)
+    x = ((1 - x) / 2 * 255).astype(np.uint8)  # [-1, 1] -> [0, 255]
+    x = x[:9216].reshape(96, 96, 16, 16)
 
     # Add noise to the images
-    x_noisy = add_gaussian_noise(x, snr_db)
+    x_noisy = add_gaussian_noise(x, sigma)
 
     return x_noisy, x
 
@@ -119,12 +120,10 @@ def ssim_batch(x, y):
     return out / x.shape[0]
 
 
-def add_gaussian_noise(image, snr):
-    """Add Gaussian noise to an image with a given SNR."""
-    signal_power = np.mean(image**2)  # Calculate signal power
-    noise_power = signal_power / (10**(snr/10))  # Calculate noise power based on SNR
-    noise = np.random.normal(0, np.sqrt(noise_power), image.shape)  # Generate Gaussian noise
+def add_gaussian_noise(image, sigma):
+    """Add Gaussian noise to an image with a given sigma."""
+    noise = np.random.normal(0, sigma, image.shape)  # Generate Gaussian noise
     noisy_image = image + noise  # Add noise to the image
-    noisy_image = np.clip(noisy_image, 0, 255)  # Clip values to ensure they are within the valid range
+    noisy_image = np.clip(noisy_image, 0, 255).astype(np.uint8)  # Clip values to ensure they are within the valid range
 
-    return noisy_image.astype(np.uint8)
+    return noisy_image
