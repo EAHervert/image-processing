@@ -6,10 +6,10 @@ import numpy as np
 import json
 import argparse
 
-parser = argparse.ArgumentParser(description='Spatial Denoising')
+parser = argparse.ArgumentParser(description='Patch Based Denoising')
 
 parser.add_argument('--dataset', type=str, default='SIDD')
-parser.add_argument('--method', type=str, default='Gaussian')
+parser.add_argument('--method', type=str, default='BM3D')
 args = parser.parse_args()
 
 x_noisy, x_gt = validation_dataset_generator(dataset=args.dataset)
@@ -23,8 +23,8 @@ elif args.dataset in ['Olivetti']:
     x_noisy_samples = x_noisy[:10, :10]
     x_gt_samples = x_gt[:10, :10]
 elif args.dataset in ['USPS']:
-    x_noisy_samples = x_noisy[:64, :64]
-    x_gt_samples = x_gt[:64, :64]
+    x_noisy_samples = x_noisy[:16, :16]
+    x_gt_samples = x_gt[:16, :16]
 else:
     exit()
 
@@ -50,7 +50,7 @@ if args.method == 'NLM':
     metrics = np.zeros((len(h_vals), len(p_vals)))
     for i, h_val in enumerate(h_vals):
         for j, p_val in enumerate(p_vals):
-            test = nlm_samples(x_noisy_samples, h_vals, p_vals)
+            test = nlm_samples(x_noisy_samples, h_val, p_val)
             avg_loss = 1 - ssim_batch(test.astype(np.single), x_gt_samples.astype(np.single))  # SSIM Loss
             metrics[i, j] = avg_loss
 
