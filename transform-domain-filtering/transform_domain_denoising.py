@@ -2,7 +2,7 @@ from image_processing_utilities.functions import metrics_samples
 from image_processing_utilities.functions import validation_dataset_generator
 from image_processing_utilities.functions import ssim_batch
 from image_processing_utilities.functions import get_samples
-from denoising_functions import nlm_samples, bm3d_samples
+from denoising_functions import fft_denoising, mask_a_b
 import numpy as np
 import json
 import argparse
@@ -10,7 +10,8 @@ import argparse
 parser = argparse.ArgumentParser(description='Patch Based Denoising')
 
 parser.add_argument('--dataset', type=str, default='SIDD')
-parser.add_argument('--method', type=str, default='BM3D')
+parser.add_argument('--method', type=str, default='Fourier')
+parser.add_argument('--shape', type=str, default='Diamond')
 args = parser.parse_args()
 
 x_noisy, x_gt = validation_dataset_generator(dataset=args.dataset)
@@ -38,57 +39,37 @@ print('SSIM: ', initial_metrics['SSIM'])
 print('PSNR: ', initial_metrics['PSNR'])
 
 print('\nFinding optimal hyperparameters:')
-if args.method == 'NLM':
+if args.method == 'Fourier':
     # Grid search find the best parameters:
-    h_vals = (np.arange(10, 200 + 1, 5) / 200)[1:]
-    p_vals = np.arange(3, 15 + 1, 2)
+    a_vals = list(range(1, 50, 1))
+    b_vals = list(range(1, 50, 1))
 
     best_loss = 1e4
-    best_h_val = None
-    best_p_val = None
+    best_a_val = None
+    best_b_val = None
     best_index = None
 
-    metrics = np.zeros((len(h_vals), len(p_vals)))
-    for i, h_val in enumerate(h_vals):
-        for j, p_val in enumerate(p_vals):
-            test = nlm_samples(x_noisy_samples, h_val, p_val)
+    metrics = np.zeros((len(a_vals), len(b_vals)))
+    for i, a_val in enumerate(a_vals):
+        for j, b_val in enumerate(b_vals):
+            mask = mask_a_b(x_noisy_samples[0, 0], a_val, b_val, shape=args.shape)
+            # TODO: Fix fft_denoising
+            test = fft_denoising(x_noisy_samples, mask)
             avg_loss = 1 - ssim_batch(test.astype(np.single), x_gt_samples.astype(np.single))  # SSIM Loss
             metrics[i, j] = avg_loss
 
             if avg_loss < best_loss:
                 best_index = [i, j]
-                best_h_val = h_val
-                best_p_val = p_val
+                best_a_val = a_val
+                best_b_val = b_val
                 best_loss = avg_loss
 
-            print('H: {h_val}, Patch Size: {p_val}, Loss: {loss}'.format(h_val=h_val, p_val=p_val, loss=avg_loss))
-            del test
+            print('A value: {a_val}, B value: {b_val}, Loss: {loss}'.format(a_val=a_val, b_val=b_val, loss=avg_loss))
+            del mask, test
 
-    print('Best Parameters -- H: {h_val}, Patch Size: {p_val}'.format(h_val=best_h_val, p_val=best_p_val))
-    denoised = nlm_samples(x_noisy, best_h_val, best_p_val)
-
-elif args.method == 'BM3D':
-    sigmas = list(range(1, 51, 1))
-    best_loss = 1e4
-    best_sigma = None
-    best_index = None
-
-    metrics = np.zeros((len(sigmas),))
-    for i, sigma in enumerate(sigmas):
-        test = bm3d_samples(x_noisy_samples, sigma)
-        avg_loss = 1 - ssim_batch(test, x_gt_samples)  # SSIM Loss
-        metrics[i] = avg_loss
-
-        if avg_loss < best_loss:
-            best_index = [i]
-            best_sigma = sigma
-            best_loss = avg_loss
-
-        print('Sigma: {sigma}, Loss: {loss}'.format(sigma=sigma, loss=avg_loss))
-        del test
-
-    print('Best Parameters -- Sigma: {sigma}'.format(sigma=best_sigma))
-    denoised = bm3d_samples(x_noisy, best_sigma)
+    print('Best Parameters -- A value: {a_val}, B value: {b_val}'.format(a_val=best_a_val, b_val=best_b_val))
+    best_mask = mask_a_b(x_noisy_samples[0], best_a_val, best_b_val, shape=args.shape)
+    denoised = fft_denoising(x_noisy_samples, best_mask)
 
 else:
     exit()

@@ -1,6 +1,7 @@
 from image_processing_utilities.functions import metrics_samples
 from image_processing_utilities.functions import validation_dataset_generator
 from image_processing_utilities.functions import ssim_batch
+from image_processing_utilities.functions import get_samples
 from denoising_functions import gaussian_blurr_samples, median_blurr_samples
 import numpy as np
 import json
@@ -17,8 +18,8 @@ color = False
 if args.dataset in ['SIDD', 'DIV2K_GSN_10', 'DIV2K_SNP_10']:
     color = True
     samples = json.load(open('config.json'))[args.dataset]
-    x_noisy_samples = np.array([x_noisy[sample[0], sample[1], :, :, :] for sample in samples])
-    x_gt_samples = np.array([x_gt[sample[0], sample[1], :, :, :] for sample in samples])
+    x_noisy_samples = get_samples(x_noisy, samples)
+    x_gt_samples = get_samples(x_gt, samples)
 elif args.dataset in ['Olivetti']:
     x_noisy_samples = x_noisy[:10, :10]
     x_gt_samples = x_gt[:10, :10]

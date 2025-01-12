@@ -127,3 +127,19 @@ def add_gaussian_noise(image, sigma):
     noisy_image = np.clip(noisy_image, 0, 255).astype(np.uint8)  # Clip values to ensure they are within the valid range
 
     return noisy_image
+
+
+def get_samples(x, samples):
+    k = len(samples)
+    m = np.sqrt(k).astype(int)
+    n = k // m
+
+    out = []
+    for i in range(m):
+        temp = []
+        for j in range(n):
+            sample = samples[i * n + j]
+            temp.append(x[sample[0], sample[1]])
+        out.append(temp)
+
+    return np.array(out)
