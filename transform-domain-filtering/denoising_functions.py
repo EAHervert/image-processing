@@ -1,6 +1,7 @@
 import numpy as np
 
-def fft_denoising(samples, mask):
+def fft_denoising(samples: np.ndarray[np.uint8],
+                  mask: np.ndarray[np.uint8]) -> np.ndarray[np.uint8]:
     m, n = samples.shape[:2]
     out = np.zeros_like(samples)
     for i in range(m):
@@ -9,7 +10,8 @@ def fft_denoising(samples, mask):
 
     return out
 
-def fft_image(sample, mask):
+def fft_image(sample: np.ndarray[np.uint8],
+              mask: np.ndarray[np.uint8]) -> np.ndarray[np.uint8]:
     if sample.ndim == 3:
         out = np.zeros_like(sample)
         out[:, :, 0], out[:, :, 1], out[:, :, 2] = (denoise_fft(sample[:, :, 0], mask),
@@ -19,7 +21,8 @@ def fft_image(sample, mask):
     else:
         return denoise_fft(sample, mask)
 
-def denoise_fft(image, mask):
+def denoise_fft(image: np.ndarray[np.uint8],
+                mask: np.ndarray[np.uint8]) -> np.ndarray[np.uint8]:
     transform = np.fft.fft2(image)  # Transforms the image to the frequency domain
     shifted_transform = np.fft.fftshift(transform)  # Shifts the image
     mask_transform = shifted_transform * mask  # Applies the mask
@@ -30,7 +33,9 @@ def denoise_fft(image, mask):
 
     return mask_image
 
-def mask_a_b(image, a, b, shape='Diamond'):
+def mask_a_b(image: np.ndarray[np.uint8],
+             a: int, b: int,
+             shape='Diamond') -> np.ndarray[np.uint8]:
     if image.ndim == 3:
         mask = np.zeros_like(image[:, :, 0])
     else:
@@ -49,4 +54,4 @@ def mask_a_b(image, a, b, shape='Diamond'):
         return mask
 
     mask[mask_area] = 1  # Ones inside the mask and zeros outside the mask
-    return mask
+    return mask.astype(np.uint8)

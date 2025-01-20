@@ -16,7 +16,7 @@ def metrics_samples(samples, samples_gt, color=False):
             out['MAE'] += error.mean()
             out['MSE'] += (error * error).mean()
             if color:
-                out['SSIM'] += ssim(samples[i][j], samples_gt[i][j], channel_axis=-1)
+                out['SSIM'] += ssim(samples[i][j], samples_gt[i][j], channel_axis=-1, data_range=255)
             else:
                 out['SSIM'] += ssim(samples[i][j], samples_gt[i][j], data_range=255)
 
@@ -110,14 +110,15 @@ def validation_dataset_generator_USPS(sigma=10):
 def ssim_batch(x, y):
     out = 0
     for i in range(x.shape[0]):
-        if x.ndim == 4:
-            out += ssim(x[i], y[i], channel_axis=-1)
-        elif x.ndim == 3:
-            out += ssim(x[i], y[i])
-        else:
-            return -1
+        for j in range(x.shape[1]):
+            if x[i, j].ndim == 3:
+                out += ssim(x[i, j], y[i, j], channel_axis=-1, data_range=255)
+            elif x[i, j].ndim == 2:
+                out += ssim(x[i, j], y[i, j], data_range=255)
+            else:
+                return -1
 
-    return out / x.shape[0]
+    return out / (x.shape[0] * x.shape[1])
 
 
 def add_gaussian_noise(image, sigma):
@@ -143,3 +144,9 @@ def get_samples(x, samples):
         out.append(temp)
 
     return np.array(out)
+
+def img_uint_to_float(img):
+    return img.astype(np.float32) / 255
+
+def img_float_to_uint(img):
+    return np.round(img * 255).astype(np.uint8)

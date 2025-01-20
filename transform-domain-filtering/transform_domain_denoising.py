@@ -25,8 +25,8 @@ elif args.dataset in ['Olivetti']:
     x_noisy_samples = x_noisy[:10, :10]
     x_gt_samples = x_gt[:10, :10]
 elif args.dataset in ['USPS']:
-    x_noisy_samples = x_noisy[:16, :16]
-    x_gt_samples = x_gt[:16, :16]
+    x_noisy_samples = x_noisy[:64, :64]
+    x_gt_samples = x_gt[:64, :64]
 else:
     exit()
 
@@ -55,7 +55,7 @@ if args.method == 'Fourier':
             mask = mask_a_b(x_noisy_samples[0, 0], a_val, b_val, shape=args.shape)
             # TODO: Fix fft_denoising
             test = fft_denoising(x_noisy_samples, mask)
-            avg_loss = 1 - ssim_batch(test.astype(np.single), x_gt_samples.astype(np.single))  # SSIM Loss
+            avg_loss = 1 - ssim_batch(test, x_gt_samples)  # SSIM Loss
             metrics[i, j] = avg_loss
 
             if avg_loss < best_loss:
